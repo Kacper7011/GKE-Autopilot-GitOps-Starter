@@ -33,7 +33,7 @@ jobs:
         
       - name: Build docker Image
         run: |
-          docker build -t europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:latest .
+          docker build -t europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:latest ./app
       
       - name: Push docker Image 
         run: |
