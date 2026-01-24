@@ -38,14 +38,14 @@ resource "google_service_account" "github_ci" {
 resource "google_service_account_iam_member" "github_impersonation" {
     service_account_id = google_service_account.github_ci.name
     role = "roles/iam.workloadIdentityUser"
-    member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_actions.name}/attribute.repository/Kacper7011/gke-autopilot-gitops-starter"
+    member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_actions.name}/attribute.repository/Kacper7011/GKE-Autopilot-GitOps-Starter"
 }
 
 # Give Ability to create a token
 resource "google_service_account_iam_member" "github_token_creator" {
     service_account_id = google_service_account.github_ci.name
     role = "roles/iam.serviceAccountTokenCreator"
-    member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_actions.name}/attribute.repository/Kacper7011/gke-autopilot-gitops-starter"
+    member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_actions.name}/attribute.repository/Kacper7011/GKE-Autopilot-GitOps-Starter"
 }
 
 # Allow GitHub to write in Artifact Registry
