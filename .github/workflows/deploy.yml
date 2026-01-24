@@ -1,13 +1,11 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Image (on tag)
 
 on:
   push:
+    tags:
+      - 'v*'
     branches:
       - main
-    paths:
-      - app/**
-      - k8s/**
-      - .github/workflows/**
 
 jobs:
   build:
@@ -30,14 +28,22 @@ jobs:
       - name: Configure Docker for Google Artifact Registry
         run: |
           gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+      - name: Extract version from git tag
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          IMAGE_VERSION="$TAG_NAME#v"
+          echo "IMAGE_VERSION=${IMAGE_VERSION}" >> $GITHUB_ENV
         
       - name: Build docker Image
         run: |
-          docker build -t europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:latest ./app
+          docker build -t europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app${IMAGE_VERSION} \
+          ./app
       
       - name: Push docker Image 
         run: |
-          docker push europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:latest
+          docker push europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app${IMAGE_VERSION}
+
 
 
 
