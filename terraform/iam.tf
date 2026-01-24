@@ -41,6 +41,13 @@ resource "google_service_account_iam_member" "github_impersonation" {
     member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_actions.name}/attribute.repository/Kacper7011/gke-autopilot-gitops-starter"
 }
 
+# Give Ability to create a token
+resource "google_service_account_iam_member" "github_token_creator" {
+    service_account_id = google_service_account.github_ci.name
+    role = "roles/iam.serviceAccountTokenCreator"
+    member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_actions.name}/attribute.repository/Kacper7011/gke-autopilot-gitops-starter"
+}
+
 # Allow GitHub to write in Artifact Registry
 resource "google_artifact_registry_repository_iam_member" "artifact_registry_writer" {
     project = var.project_id
