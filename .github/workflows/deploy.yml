@@ -1,0 +1,44 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - app/**
+      - k8s/**
+      - .github/workflows/**
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/364308840078/locations/global/workloadIdentityPools/github-actions/providers/github-provider'
+          service_account: github-ci@gke-autopilot-gitops-starter.iam.gserviceaccount.com
+        
+      - name: Configure Docker for Google Artifact Registry
+        run: |
+          gcloud auth configure-docker europe-west1-docker.pkg.dev
+        
+      - name: Build docker Image
+        run: |
+          docker build -t europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:latest .
+      
+      - name: Push docker Image 
+        run: |
+          docker push europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:latest
+
+
+
+          
