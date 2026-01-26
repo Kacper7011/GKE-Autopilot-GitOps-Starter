@@ -4,7 +4,7 @@ metadata:
   name: fastapi-app
   namespace: argocd
 spec:
-  project: default
+  project: app-project
 
   source:
     repoURL: https://github.com/Kacper7011/GKE-Autopilot-GitOps-Starter.git
@@ -16,6 +16,8 @@ spec:
     namespace: app
   
   syncPolicy:
-    automated: {}
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
