@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: app-project
+  namespace: argocd
+spec:
+  description: Project for FastAPI application deployed via GitOps
+  
+  sourceRepos:
+    - https://github.com/Kacper7011/GKE-Autopilot-GitOps-Starter.git
+
+  destinations:
+    - namespace: app
+      server: https://kubernetes.default.svc
+
+  namespaceResourceWhitelist:
+    - group: apps
+      kind: Deployment
+    - group: ""
+      kind: Service
+
+  clusterResourceWhitelist: []
