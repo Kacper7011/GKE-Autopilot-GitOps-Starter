@@ -49,10 +49,10 @@ jobs:
           docker push europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}
         
       - name: Checkout deploy branch
-        run: |
-          git fetch origin deploy/app
-          git checkout deploy/app
-          git reset --hard origin/deploy/app
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/app
+          fetch-depth: 0
 
       - name: Update Image Tag in YAML
         run: | 
