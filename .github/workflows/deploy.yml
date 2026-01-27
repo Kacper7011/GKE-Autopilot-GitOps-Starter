@@ -24,6 +24,9 @@ jobs:
         with:
           workload_identity_provider: 'projects/364308840078/locations/global/workloadIdentityPools/github-actions/providers/github-provider'
           service_account: github-ci@gke-autopilot-gitops-starter.iam.gserviceaccount.com
+      
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
         
       - name: Configure Docker for Google Artifact Registry
         run: |
@@ -45,15 +48,22 @@ jobs:
         run: |
           docker push europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}
         
-      - name: Create new branch
+      - name: Checkout deploy branch
         run: |
-          git checkout -B deploy/app
-      
+          git fetch origin deploy/app
+          git checkout deploy/app
+          git reset --hard origin/deploy/app
+
       - name: Update Image Tag in YAML
         run: | 
           sed -i \
-          "s|image: .*fastapi-app:.*|image: europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}|" \
+          "s|europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:.*|europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}|" \
           k8s/deployment.yml
+
+      - name: Debug deployment.yml
+        run: |
+          echo "deployment.yml AFTER sed"
+          cat k8s/deployment.yml
 
       - name: Commit changes made to deployment.yml
         run: |
@@ -64,19 +74,7 @@ jobs:
           git diff --quiet || git commit -m "chore: deploy v${IMAGE_VERSION}"
           git push origin deploy/app
 
-      - name: Set up GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: k8s-cluster
-          location: europe-west1
-      
-      - name: Deploy to GKE
-        run: |
-          kubectl apply -f k8s/
-        
-      - name: Verify deployment
-        run: |
-          kubectl rollout status deployment/fastapi-app -n app
+
 
 
 
