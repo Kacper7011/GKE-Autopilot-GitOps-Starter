@@ -1,10 +1,12 @@
 import os
-import time
 from fastapi import FastAPI
 from datetime import datetime
+import socket
+import uuid
 
-APP_VERSION = "0.1.5"  # <-- TU ŚWIADOMIE ZMIENIASZ W KOLEJNYCH RELEASE'ACH
+APP_VERSION = "0.1.6"
 START_TIME = datetime.utcnow()
+INSTANCE_ID = str(uuid.uuid4())[:8]
 
 app = FastAPI(
     title="FastAPI GitOps Demo",
@@ -15,12 +17,31 @@ app = FastAPI(
 @app.get("/")
 def read_root():
     return {
-        "message": "Hello from GKE Autopilot 🚀",
+        "message": "🚀 Hello from GKE Autopilot – NEW RELEASE!",
         "app_version": APP_VERSION,
+        "instance_id": INSTANCE_ID,
         "pod_name": os.getenv("POD_NAME", "unknown"),
+        "node_name": socket.gethostname(),
         "project_id": os.getenv("PROJECT_ID", "unknown"),
         "started_at_utc": START_TIME.isoformat() + "Z",
         "uptime_seconds": int((datetime.utcnow() - START_TIME).total_seconds()),
+    }
+
+@app.get("/version")
+def version():
+    return {
+        "version": APP_VERSION,
+        "instance_id": INSTANCE_ID,
+        "started_at": START_TIME.isoformat() + "Z",
+    }
+
+@app.get("/whoami")
+def whoami():
+    return {
+        "pod_name": os.getenv("POD_NAME"),
+        "node": socket.gethostname(),
+        "instance_id": INSTANCE_ID,
+        "env": os.getenv("ENV", "production"),
     }
 
 @app.get("/health/live")
@@ -42,9 +63,6 @@ def readiness():
 
 @app.get("/config")
 def config_preview():
-    """
-    Endpoint pomocny do debugowania środowiska uruchomieniowego
-    """
     return {
         "env": {
             "POD_NAME": os.getenv("POD_NAME"),
@@ -55,14 +73,9 @@ def config_preview():
 
 @app.get("/feature/experimental")
 def experimental_feature():
-    """
-    Ten endpoint jest idealny do testów:
-    - w kolejnej wersji możesz zmienić response
-    - albo go usunąć
-    """
     return {
         "feature": "experimental",
         "enabled": True,
-        "note": "This feature exists only in version 0.1.5+",
+        "changed_in": "0.1.6",
+        "note": "This response is DIFFERENT than in 0.1.5",
     }
-
