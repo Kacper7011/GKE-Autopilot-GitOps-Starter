@@ -14,18 +14,21 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout deploy branch
+      # Checkout MAIN – źródło prawdy aplikacji
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: deploy/app
+          ref: main
           fetch-depth: 0
 
+      # Wyciągnięcie wersji z taga
       - name: Extract version from git tag
         run: |
           TAG_NAME="${GITHUB_REF##*/}"
           IMAGE_VERSION="${TAG_NAME#v}"
           echo "IMAGE_VERSION=${IMAGE_VERSION}" >> $GITHUB_ENV
 
+      # Auth do GCP
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -39,25 +42,37 @@ jobs:
         run: |
           gcloud auth configure-docker europe-west1-docker.pkg.dev
 
+      # Build obrazu Z MAIN
       - name: Build docker image
         run: |
-          docker build -t europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION} ./app
+          docker build \
+            -t europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION} \
+            ./app
 
       - name: Push docker image
         run: |
           docker push europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}
 
+      # Checkout deploy/app – tylko manifesty
+      - name: Checkout deploy branch
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/app
+          fetch-depth: 0
+
+      # Update deployment.yml
       - name: Update image tag in deployment.yml
         run: |
           sed -i \
-          "s|europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:.*|europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}|" \
-          k8s/deployment.yml
+            "s|image: .*fastapi-app:.*|image: europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}|" \
+            k8s/deployment.yml
 
+      # Commit + push (tylko jeśli są zmiany)
       - name: Commit and push
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
           git add k8s/deployment.yml
-          git commit -m "chore: deploy v${IMAGE_VERSION}"
+          git diff --quiet || git commit -m "chore: deploy v${IMAGE_VERSION}"
           git push origin deploy/app
