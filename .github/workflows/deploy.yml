@@ -14,69 +14,50 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: 'projects/364308840078/locations/global/workloadIdentityPools/github-actions/providers/github-provider'
-          service_account: github-ci@gke-autopilot-gitops-starter.iam.gserviceaccount.com
-      
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
-        
-      - name: Configure Docker for Google Artifact Registry
-        run: |
-          gcloud auth configure-docker europe-west1-docker.pkg.dev
-
-      - name: Extract version from git tag
-        run: |
-          echo "GITHUB_REF=${GITHUB_REF}"
-          TAG_NAME="${GITHUB_REF##*/}"
-          IMAGE_VERSION="${TAG_NAME#v}"
-          echo "IMAGE_VERSION=${IMAGE_VERSION}" >> $GITHUB_ENV
-        
-      - name: Build docker Image
-        run: |
-          docker build -t europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION} \
-          ./app
-      
-      - name: Push docker Image 
-        run: |
-          docker push europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}
-        
       - name: Checkout deploy branch
         uses: actions/checkout@v4
         with:
           ref: deploy/app
           fetch-depth: 0
 
-      - name: Update Image Tag in YAML
-        run: | 
+      - name: Extract version from git tag
+        run: |
+          TAG_NAME="${GITHUB_REF##*/}"
+          IMAGE_VERSION="${TAG_NAME#v}"
+          echo "IMAGE_VERSION=${IMAGE_VERSION}" >> $GITHUB_ENV
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/364308840078/locations/global/workloadIdentityPools/github-actions/providers/github-provider'
+          service_account: github-ci@gke-autopilot-gitops-starter.iam.gserviceaccount.com
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+      - name: Build docker image
+        run: |
+          docker build -t europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION} ./app
+
+      - name: Push docker image
+        run: |
+          docker push europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}
+
+      - name: Update image tag in deployment.yml
+        run: |
           sed -i \
           "s|europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:.*|europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:${IMAGE_VERSION}|" \
           k8s/deployment.yml
 
-      - name: Debug deployment.yml
-        run: |
-          echo "deployment.yml AFTER sed"
-          cat k8s/deployment.yml
-
-      - name: Commit changes made to deployment.yml
+      - name: Commit and push
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
           git add k8s/deployment.yml
-          git diff --quiet || git commit -m "chore: deploy v${IMAGE_VERSION}"
+          git commit -m "chore: deploy v${IMAGE_VERSION}"
           git push origin deploy/app
-
-
-
-
-
-
-          
