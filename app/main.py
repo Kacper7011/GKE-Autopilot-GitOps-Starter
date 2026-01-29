@@ -4,7 +4,7 @@ from datetime import datetime
 import socket
 import uuid
 
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.2.3"
 START_TIME = datetime.utcnow()
 INSTANCE_ID = str(uuid.uuid4())[:8]
 
