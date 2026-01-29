@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: fastapi-app
-          image: europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:0.2.2
+          image: europe-west1-docker.pkg.dev/gke-autopilot-gitops-starter/app-repo/fastapi-app:0.2.3
           ports:
             - containerPort: 8080
           env:
